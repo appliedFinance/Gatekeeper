@@ -1,16 +1,37 @@
 // Gatekeeper assignment
+if (process.argv[2]===undefined) {
+	console.log("need port.\n");
+	process.exit();
+}
 
+const PORT_NUM = process.argv[2];
 // Notes & Stuff:
 //"x-username-and-password": "user=ellen&pass=superSecretPassword"
 //
 // req.get('x-username-and-password')
 
-const queryString = require('query-string');
+const say = (s) => { console.log(s); }
+const qs = require('query-string');
 // https://www.npmjs.com/package/query-string 
-
 
 const express = require('express');
 const app = express();
+
+const logRequest = (request, response, next) => {
+	const logObj = {
+		time: (new Date()).toTimeString(),
+		method: request.method,
+		hostname: request.hostname,
+		path: request.path,
+		"content type": request.get('Content-Type'),
+		query: JSON.stringify(request.query),
+		body: JSON.stringify(request.body),
+		user: request.user
+	}
+	console.log(logObj);
+	console.log("-------------------------\n");
+	next();
+};
 
 // here: https://crackstation.net/hashing-security.htm
 const USERS = [
@@ -61,13 +82,21 @@ const USERS = [
 //     (aka, `req.user = matchedUser`)
 function gateKeeper(req, res, next) {
 	
-	
-	
-	
+	let headerObj = qs.parse( req.get('x-username-and-password') );
+	say(headerObj);
+
+	let found = USERS.find( elt => {
+		say( elt.userName );
+		return (elt.userName == headerObj.user && elt.password == headerObj.password);
+	});
+	req.user = found;  // undefined if isn't found.
+
 	next();
 }
 
 // Add the middleware to your app!
+app.use(gateKeeper);
+app.use(logRequest);
 
 // this endpoint returns a json object representing the user making the request,
 // IF they supply valid user credentials. This endpoint assumes that `gateKeeper` 
@@ -84,7 +113,7 @@ app.get("/api/users/me", (req, res) => {
 	return res.json({firstName, lastName, id, userName, position});
 });
 
-app.listen(process.env.PORT, () => {
-	console.log(`Your app is listening on port ${process.env.PORT}`);
+app.listen(process.env.PORT || PORT_NUM, () => {
+	console.log(`Your app is listening on port ${process.env.PORT || PORT_NUM}`);
 });
 
