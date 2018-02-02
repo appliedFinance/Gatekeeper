@@ -1,4 +1,6 @@
 // Gatekeeper assignment
+
+// read port off command line
 if (process.argv[2]===undefined) {
 	console.log("need port.\n");
 	process.exit();
@@ -85,8 +87,7 @@ function gateKeeper(req, res, next) {
 	let headerObj = qs.parse( req.get('x-username-and-password') );
 	say(headerObj);
 
-	let found = USERS.find( elt => {
-		say( elt.userName );
+	let found = USERS.find( elt => {	
 		return (elt.userName == headerObj.user && elt.password == headerObj.password);
 	});
 	req.user = found;  // undefined if isn't found.
